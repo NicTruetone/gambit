@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GAMBIT — Ask anything about chess</title>
+<meta name="description" content="The AI chess coach that knows your games. Connect your chess.com account and ask anything — openings, mistakes, patterns. Get answers with live board walkthroughs."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --border: #2a2a2a;
+  --border2: #383838;
+  --text: #f0ebe0;
+  --text2: #999;
+  --text3: #555;
+  --gold: #B8860B;
+  --gold-light: #d4a017;
+  --gold-dim: #7a5a08;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 48px;
+  background: rgba(13,13,13,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: 22px; letter-spacing: -0.5px;
+  color: var(--text);
+}
+.nav-logo em { font-style: italic; color: var(--gold); }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a { font-size: 13px; color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: var(--gold); color: #fff;
+  padding: 9px 22px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  transition: background 0.2s;
+  cursor: pointer; border: none;
+}
+.nav-cta:hover { background: var(--gold-light); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 120px 48px 80px;
+  position: relative; overflow: hidden;
+}
+.hero-grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(184,134,11,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184,134,11,0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+.hero-inner {
+  max-width: 1200px; margin: 0 auto; width: 100%;
+  display: grid; grid-template-columns: 1fr 420px; gap: 80px; align-items: center;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;
+  border: 1px solid var(--gold-dim); border-radius: 20px;
+  padding: 5px 14px; margin-bottom: 28px;
+}
+.hero-eyebrow::before { content: '♟'; font-size: 12px; }
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(44px, 6vw, 76px);
+  font-weight: 900; line-height: 1.04;
+  letter-spacing: -2px; margin-bottom: 24px;
+}
+h1 em { font-style: italic; color: var(--gold); }
+.hero-sub {
+  font-size: 17px; color: var(--text2); font-weight: 300;
+  max-width: 480px; line-height: 1.7; margin-bottom: 40px;
+}
+.hero-form {
+  display: flex; gap: 10px; max-width: 440px;
+}
+.hero-form input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+  outline: none; transition: border-color 0.2s;
+}
+.hero-form input::placeholder { color: var(--text3); }
+.hero-form input:focus { border-color: var(--gold); }
+.hero-form button {
+  background: var(--gold); color: #fff; border: none;
+  border-radius: 10px; padding: 14px 24px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: background 0.2s;
+}
+.hero-form button:hover { background: var(--gold-light); }
+.hero-note {
+  margin-top: 14px; font-size: 12px; color: var(--text3);
+  font-family: 'DM Mono', monospace;
+}
+.hero-stats {
+  display: flex; gap: 32px; margin-top: 48px;
+}
+.hero-stat-num {
+  font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700;
+  color: var(--text); line-height: 1;
+}
+.hero-stat-lbl {
+  font-size: 12px; color: var(--text3); margin-top: 4px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── BOARD VISUAL ── */
+.hero-board-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.chess-board-visual {
+  display: grid; grid-template-columns: repeat(8, 1fr);
+  width: 340px; height: 340px;
+  border-radius: 6px; overflow: hidden;
+  border: 2px solid var(--border2);
+  box-shadow: 0 0 60px rgba(184,134,11,0.12), 0 32px 64px rgba(0,0,0,0.6);
+}
+.cb-sq {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; line-height: 1;
+  transition: background 0.3s;
+}
+.cb-light { background: #2a2218; }
+.cb-dark { background: #1a150d; }
+.cb-sq.active-sq { background: rgba(184,134,11,0.3) !important; }
+.cb-wp { color: #f0e8d0; text-shadow: 0 0 8px rgba(240,232,208,0.4); }
+.cb-bp { color: #c8a820; text-shadow: 0 0 8px rgba(200,168,32,0.4); }
+.board-caption {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--text3); text-align: center; letter-spacing: 0.5px;
+}
+
+/* ── SECTION BASE ── */
+section { padding: 100px 48px; }
+.section-inner { max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 900; letter-spacing: -1.5px; line-height: 1.1;
+  margin-bottom: 16px;
+}
+h2 em { font-style: italic; color: var(--gold); }
+.section-sub {
+  font-size: 16px; color: var(--text2); font-weight: 300; max-width: 520px;
+}
+
+/* ── ASK SECTION ── */
+.ask-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.ask-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+}
+.ask-chat {
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 16px; overflow: hidden;
+}
+.ask-chat-top {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.chat-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.chat-title { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+.ask-messages { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.chat-msg { display: flex; flex-direction: column; gap: 4px; }
+.chat-msg.user { align-items: flex-end; }
+.chat-msg.bot { align-items: flex-start; }
+.chat-bubble {
+  padding: 10px 14px; border-radius: 12px;
+  font-size: 13px; line-height: 1.6; max-width: 85%;
+}
+.chat-msg.user .chat-bubble { background: var(--gold); color: #fff; border-radius: 12px 12px 3px 12px; }
+.chat-msg.bot .chat-bubble { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 12px 12px 12px 3px; }
+.chat-sender { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; padding: 0 4px; }
+.ask-prompts { display: flex; flex-direction: column; gap: 12px; }
+.ask-prompt-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.ask-prompt-item:hover { border-color: var(--gold-dim); transform: translateX(4px); }
+.ask-prompt-q { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.ask-prompt-a { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ── FEATURES ── */
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-top: 56px;
+}
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.feature-card:hover { border-color: var(--gold-dim); transform: translateY(-3px); }
+.feature-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: rgba(184,134,11,0.1); border: 1px solid var(--gold-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 18px;
+}
+.feature-title { font-size: 16px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
+.feature-body { font-size: 13px; color: var(--text2); line-height: 1.65; }
+
+/* ── HOW IT WORKS ── */
+.how-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 56px; }
+.step { padding: 0 40px 0 0; position: relative; }
+.step:not(:last-child)::after {
+  content: '→';
+  position: absolute; right: -4px; top: 14px;
+  color: var(--gold-dim); font-size: 20px;
+}
+.step-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 56px; font-weight: 900; line-height: 1;
+  color: rgba(184,134,11,0.15); margin-bottom: 16px;
+}
+.step-title { font-size: 17px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
+.step-body { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+/* ── THEMES PREVIEW ── */
+.themes-row {
+  display: flex; gap: 16px; margin-top: 48px; flex-wrap: wrap;
+}
+.theme-preview {
+  border-radius: 8px; overflow: hidden; border: 1px solid var(--border2);
+  transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
+}
+.theme-preview:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+.theme-preview-board {
+  display: grid; grid-template-columns: repeat(4,14px); grid-template-rows: repeat(4,14px);
+}
+.theme-preview-name {
+  padding: 5px 8px; font-size: 10px; font-family: 'DM Mono', monospace;
+  color: var(--text2); text-align: center; background: var(--surface2);
+}
+.theme-lock {
+  padding: 5px 8px; font-size: 10px; font-family: 'DM Mono', monospace;
+  color: var(--gold); text-align: center; background: var(--surface2);
+}
+
+/* ── WAITLIST ── */
+.waitlist-section {
+  text-align: center; padding: 120px 48px;
+  position: relative; overflow: hidden;
+}
+.waitlist-glow {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(184,134,11,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.waitlist-piece {
+  font-size: 64px; line-height: 1; margin-bottom: 32px;
+  opacity: 0.15; display: block;
+}
+.waitlist-section h2 { margin-bottom: 16px; }
+.waitlist-sub { font-size: 16px; color: var(--text2); margin-bottom: 40px; max-width: 440px; margin-left: auto; margin-right: auto; }
+.waitlist-form {
+  display: flex; gap: 10px; max-width: 440px; margin: 0 auto 16px;
+}
+.waitlist-form input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+  outline: none; transition: border-color 0.2s; text-align: center;
+}
+.waitlist-form input::placeholder { color: var(--text3); }
+.waitlist-form input:focus { border-color: var(--gold); }
+.waitlist-form button {
+  background: var(--gold); color: #fff; border: none;
+  border-radius: 10px; padding: 14px 24px;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: background 0.2s; white-space: nowrap;
+}
+.waitlist-form button:hover { background: var(--gold-light); }
+.waitlist-note { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+.success-msg {
+  display: none; background: rgba(29,158,117,0.1); border: 1px solid rgba(29,158,117,0.3);
+  border-radius: 10px; padding: 14px 20px; font-size: 14px; color: #5dcaa5;
+  max-width: 440px; margin: 0 auto;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border); padding: 32px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-logo {
+  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 16px;
+}
+.footer-logo em { font-style: italic; color: var(--gold); }
+.footer-right { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.7s ease forwards; }
+.fade-up-1 { animation-delay: 0.1s; opacity: 0; }
+.fade-up-2 { animation-delay: 0.25s; opacity: 0; }
+.fade-up-3 { animation-delay: 0.4s; opacity: 0; }
+.fade-up-4 { animation-delay: 0.55s; opacity: 0; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.chess-board-visual { animation: float 6s ease-in-out infinite; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 24px 60px; }
+  .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+  .chess-board-visual { width: 280px; height: 280px; }
+  section { padding: 72px 24px; }
+  .ask-inner { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; gap: 32px; }
+  .step:not(:last-child)::after { content: '↓'; right: auto; left: 14px; top: auto; bottom: -24px; }
+  .waitlist-section { padding: 80px 24px; }
+  .waitlist-form { flex-direction: column; }
+  footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">GAM<em>B</em>IT</div>
+  <div class="nav-links">
+    <a href="#features">features</a>
+    <a href="#how">how it works</a>
+    <a href="#waitlist">early access</a>
+  </div>
+  <button class="nav-cta" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join waitlist</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow fade-up fade-up-1">AI chess coach</div>
+      <h1 class="fade-up fade-up-2">Ask us <em>anything</em> about chess.</h1>
+      <p class="hero-sub fade-up fade-up-3">Connect your chess.com account. Ask what went wrong, what opening to fix, why you keep losing endgames. Get answers with live board walkthroughs.</p>
+      <div class="hero-form fade-up fade-up-4">
+        <input type="email" id="hero-email" placeholder="your@email.com"/>
+        <button onclick="submitEmail('hero-email', 'hero-success')">Get early access</button>
+      </div>
+      <div class="success-msg" id="hero-success">You're on the list. We'll be in touch.</div>
+      <p class="hero-note fade-up fade-up-4" style="animation-delay:0.65s">Free during early access · No credit card needed</p>
+      <div class="hero-stats fade-up" style="animation-delay:0.7s;opacity:0;">
+        <div>
+          <div class="hero-stat-num">100</div>
+          <div class="hero-stat-lbl">games analyzed</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">8</div>
+          <div class="hero-stat-lbl">board themes</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">∞</div>
+          <div class="hero-stat-lbl">questions</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-board-wrap fade-up" style="animation-delay:0.35s;opacity:0;">
+      <div class="chess-board-visual" id="hero-board"></div>
+      <div class="board-caption">live board walkthroughs · 8 themes</div>
+    </div>
+  </div>
+</section>
+
+<!-- ASK SECTION -->
+<section class="ask-section" id="features">
+  <div class="ask-inner">
+    <div>
+      <div class="section-label">ask anything</div>
+      <h2>Your coach knows <em>your</em> games.</h2>
+      <p class="section-sub" style="margin-bottom:32px;">Not generic tips. Real answers about your actual moves, your recurring mistakes, your opening choices — pulled from your last 100 games.</p>
+      <div class="ask-prompts">
+        <div class="ask-prompt-item">
+          <div class="ask-prompt-q">"What is my biggest opening flaw?"</div>
+          <div class="ask-prompt-a">Gambit scans your games, identifies your most-played openings, and shows you exactly where you're going wrong with a board demo.</div>
+        </div>
+        <div class="ask-prompt-item">
+          <div class="ask-prompt-q">"Walk me through game 3 — where did I lose it?"</div>
+          <div class="ask-prompt-a">Step through the critical moments of any of your recent games, with move-by-move commentary on the board.</div>
+        </div>
+        <div class="ask-prompt-item">
+          <div class="ask-prompt-q">"Why do I keep losing endgames?"</div>
+          <div class="ask-prompt-a">Pattern analysis across all your games, with concrete lessons shown on the board — not just text advice.</div>
+        </div>
+      </div>
+    </div>
+    <div class="ask-chat">
+      <div class="ask-chat-top">
+        <div class="chat-dot"></div>
+        <span class="chat-title">gambit · chess coach</span>
+      </div>
+      <div class="ask-messages">
+        <div class="chat-msg user">
+          <div class="chat-sender">you</div>
+          <div class="chat-bubble">What's my biggest opening weakness?</div>
+        </div>
+        <div class="chat-msg bot">
+          <div class="chat-sender">gambit</div>
+          <div class="chat-bubble">Looking at your last 100 blitz games — you're losing <strong>68% of Italian Game positions</strong> as Black after move 10. You're allowing d4 without fighting back. I'll show you exactly where it breaks down.</div>
+        </div>
+        <div class="chat-msg user">
+          <div class="chat-sender">you</div>
+          <div class="chat-bubble">Show me on the board</div>
+        </div>
+        <div class="chat-msg bot">
+          <div class="chat-sender">gambit</div>
+          <div class="chat-bubble">Loading game 7 — move 11 is where it falls apart. Watch White's d4 break and how your knight has nowhere to go...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <div class="section-inner">
+    <div class="section-label">everything you need</div>
+    <h2>A coach that <em>watches</em> you play.</h2>
+    <p class="section-sub">Built for players who want to actually improve — not just read about chess.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">♟</div>
+        <div class="feature-title">Live board walkthroughs</div>
+        <div class="feature-body">Every answer comes with an interactive board demo. Step through moves one by one, see exactly what happened and what you should have played instead.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">100 games analyzed</div>
+        <div class="feature-body">Connect your chess.com account in seconds. Filter by bullet, blitz, or rapid. Gambit reads your last 100 games and builds a picture of your weaknesses.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">♛</div>
+        <div class="feature-title">Ask anything</div>
+        <div class="feature-body">No menus, no structured lessons. Just ask. "Why do I lose with black?" or "Teach me the London System" — Gambit answers in plain English with board demos.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">♜</div>
+        <div class="feature-title">Opening preparation</div>
+        <div class="feature-body">Ask Gambit to walk you through any opening line, show you the traps, explain the ideas behind each move. Theory that actually sticks.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">♞</div>
+        <div class="feature-title">Pattern recognition</div>
+        <div class="feature-body">Gambit spots recurring patterns across all your games — the same type of blunder, the same structural weakness — and tells you what to work on first.</div>
+      </div>
+      <div class="feature-card" style="border-color:var(--gold-dim);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:12px;right:12px;background:rgba(184,134,11,0.15);border:1px solid var(--gold-dim);border-radius:20px;padding:3px 10px;font-size:10px;font-family:'DM Mono',monospace;color:var(--gold);">premium</div>
+        <div class="feature-icon" style="border-color:var(--gold);">♔</div>
+        <div class="feature-title">Premium board themes</div>
+        <div class="feature-body">Midnight, Obsidian, Emerald, Crimson, Amethyst, Gold. Six handcrafted board designs that make every game look as good as it plays.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="section-inner">
+    <div class="section-label">how it works</div>
+    <h2>Up and running in <em>60 seconds.</em></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Enter your username</div>
+        <div class="step-body">Type your chess.com username. No passwords, no OAuth dance — Gambit uses the public API to load your recent games instantly.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Pick your time controls</div>
+        <div class="step-body">Only want your blitz analyzed? Just blitz. Mix rapid and blitz? Done. Gambit filters to the games that actually matter to you.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Ask anything</div>
+        <div class="step-body">Your last 100 games are loaded. Start asking — and watch Gambit pull up your actual positions on the board to show you exactly what it means.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THEMES -->
+<section>
+  <div class="section-inner">
+    <div class="section-label">board themes</div>
+    <h2>Chess should <em>look</em> as good as it plays.</h2>
+    <p class="section-sub">Two themes free. Six unlocked with Premium — each one handcrafted with distinct piece colours and square palettes.</p>
+    <div class="themes-row" id="themes-row"></div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="waitlist-section" id="waitlist">
+  <div class="waitlist-glow"></div>
+  <span class="waitlist-piece">♛</span>
+  <div class="section-label" style="justify-content:center;display:flex;">early access</div>
+  <h2 style="max-width:600px;margin:0 auto 16px;">Be the first to <em>play.</em></h2>
+  <p class="waitlist-sub">Free during early access. Join the waitlist and we'll email you the moment it launches.</p>
+  <div class="waitlist-form">
+    <input type="email" id="waitlist-email" placeholder="your@email.com"/>
+    <button onclick="submitEmail('waitlist-email','waitlist-success')">Join waitlist</button>
+  </div>
+  <div class="success-msg" id="waitlist-success">You're on the list. See you on the board.</div>
+  <p class="waitlist-note">No spam. Just a launch email when we're ready.</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">GAM<em>B</em>IT</div>
+  <div class="footer-right">© 2025 Gambit · built for chess players</div>
+</footer>
+
+<script>
+// ── HERO BOARD ──
+const INIT_POS = [
+  ['br','bn','bb','bq','bk','bb','bn','br'],
+  ['bp','bp','bp','bp','bp','bp','bp','bp'],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  [null,null,null,null,null,null,null,null],
+  ['wp','wp','wp','wp','wp','wp','wp','wp'],
+  ['wr','wn','wb','wq','wk','wb','wn','wr']
+];
+const GLYPHS = {wp:'♙',wn:'♘',wb:'♗',wr:'♖',wq:'♕',wk:'♔',bp:'♟',bn:'♞',bb:'♝',br:'♜',bq:'♛',bk:'♚'};
+
+function renderHeroBoard(pos, highlights=[]) {
+  const el = document.getElementById('hero-board');
+  if (!el) return;
+  let html = '';
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const isLight = (r + c) % 2 === 0;
+      const piece = pos[r][c];
+      const isHL = highlights.some(h => h[0] === r && h[1] === c);
+      const cls = `cb-sq ${isLight ? 'cb-light' : 'cb-dark'}${isHL ? ' active-sq' : ''}`;
+      const pCls = piece ? (piece[0] === 'w' ? 'cb-wp' : 'cb-bp') : '';
+      html += `<div class="${cls}"><span class="${pCls}">${piece ? GLYPHS[piece] || '' : ''}</span></div>`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+// Animate a mini game on the hero board
+const DEMO_MOVES = [
+  {from:[6,4],to:[4,4],piece:'wp',hl:[[4,4],[6,4]]}, // e4
+  {from:[1,4],to:[3,4],piece:'bp',hl:[[3,4],[1,4]]}, // e5
+  {from:[7,6],to:[5,5],piece:'wn',hl:[[5,5],[7,6]]}, // Nf3
+  {from:[0,1],to:[2,2],piece:'bn',hl:[[2,2],[0,1]]}, // Nc6
+  {from:[7,5],to:[4,2],piece:'wb',hl:[[4,2],[7,5]]}, // Bc4
+  {from:[0,5],to:[3,2],piece:'bb',hl:[[3,2],[0,5]]}, // Bc5
+];
+
+let boardPos = JSON.parse(JSON.stringify(INIT_POS));
+let moveIdx = 0;
+
+function playNextMove() {
+  if (moveIdx >= DEMO_MOVES.length) {
+    boardPos = JSON.parse(JSON.stringify(INIT_POS));
+    moveIdx = 0;
+    renderHeroBoard(boardPos);
+    setTimeout(playNextMove, 2000);
+    return;
+  }
+  const mv = DEMO_MOVES[moveIdx];
+  boardPos[mv.to[0]][mv.to[1]] = mv.piece;
+  boardPos[mv.from[0]][mv.from[1]] = null;
+  renderHeroBoard(boardPos, mv.hl);
+  moveIdx++;
+  setTimeout(playNextMove, 1400);
+}
+renderHeroBoard(boardPos);
+setTimeout(playNextMove, 1800);
+
+// ── THEMES PREVIEW ──
+const THEMES = [
+  {name:'Classic',free:true,light:'#F0D9B5',dark:'#B58863'},
+  {name:'Walnut',free:true,light:'#e8c89a',dark:'#7a4020'},
+  {name:'Midnight',free:false,light:'#c4d8f0',dark:'#1e2d60'},
+  {name:'Emerald',free:false,light:'#a8d4a0',dark:'#1e5e1a'},
+  {name:'Obsidian',free:false,light:'#484848',dark:'#181818'},
+  {name:'Crimson',free:false,light:'#f0c0c0',dark:'#8a1818'},
+  {name:'Amethyst',free:false,light:'#e0ccf5',dark:'#3a1268'},
+  {name:'Gold',free:false,light:'#f8e8a0',dark:'#8a6008'},
+];
+const tRow = document.getElementById('themes-row');
+THEMES.forEach(t => {
+  const wrap = document.createElement('div');
+  wrap.className = 'theme-preview';
+  let sq = '';
+  for (let i = 0; i < 16; i++) {
+    const r = Math.floor(i/4), c = i%4;
+    const isL = (r+c)%2===0;
+    sq += `<div style="background:${isL?t.light:t.dark};width:14px;height:14px;"></div>`;
+  }
+  wrap.innerHTML = `<div class="theme-preview-board">${sq}</div><div class="${t.free?'theme-preview-name':'theme-lock'}">${t.free?t.name:'★ '+t.name}</div>`;
+  tRow.appendChild(wrap);
+});
+
+// ── EMAIL CAPTURE ──
+const BEEHIIV_FORM_ID = '9d84495a-d66e-4945-9f04-cc27b2a21f22';
+
+async function submitEmail(inputId, successId) {
+  const input = document.getElementById(inputId);
+  const success = document.getElementById(successId);
+  const btn = input.parentElement.querySelector('button');
+  const email = input.value.trim();
+
+  if (!email || !email.includes('@')) {
+    input.style.borderColor = '#e24b4a';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+
+  btn.textContent = 'Joining...';
+  btn.disabled = true;
+
+  try {
+    await fetch(`https://subscribe-forms.beehiiv.com/${BEEHIIV_FORM_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+      mode: 'no-cors'
+    });
+  } catch(e) {}
+
+  // no-cors means we can't read the response — assume success if no network error
+  input.parentElement.style.display = 'none';
+  success.style.display = 'block';
+}
+
+// ── SCROLL ANIMATIONS ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.animation = 'fadeUp 0.6s ease forwards';
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feature-card, .step, .ask-prompt-item').forEach(el => {
+  el.style.opacity = '0';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
