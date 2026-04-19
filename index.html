@@ -345,7 +345,7 @@ footer {
 }
 .chess-board-visual { animation: float 6s ease-in-out infinite; }
 
-/* ── RESPONSIVE ── */
+/* ── RESPONSIVE TABLET ── */
 @media (max-width: 900px) {
   nav { padding: 16px 24px; }
   .nav-links { display: none; }
@@ -360,6 +360,44 @@ footer {
   .waitlist-section { padding: 80px 24px; }
   .waitlist-form { flex-direction: column; }
   footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 480px) {
+  nav { padding: 14px 18px; }
+  .nav-cta { padding: 8px 14px; font-size: 12px; }
+  .hero { padding: 90px 18px 50px; }
+  .hero-eyebrow { font-size: 10px; padding: 4px 12px; margin-bottom: 20px; }
+  h1 { font-size: 36px; letter-spacing: -1px; margin-bottom: 18px; }
+  .hero-sub { font-size: 15px; margin-bottom: 28px; }
+  .hero-form { flex-direction: column; gap: 10px; }
+  .hero-form input { width: 100%; padding: 14px 16px; }
+  .hero-form button { width: 100%; padding: 14px; text-align: center; }
+  .hero-board-wrap { display: none; }
+  .hero-stats { gap: 20px; flex-wrap: wrap; }
+  .hero-stat-num { font-size: 22px; }
+  section { padding: 56px 18px; }
+  h2 { font-size: 28px; letter-spacing: -0.5px; }
+  .section-sub { font-size: 14px; }
+  .ask-chat { margin-top: 32px; }
+  .chat-bubble { font-size: 12px; padding: 8px 11px; }
+  .ask-prompt-item { padding: 13px 16px; }
+  .ask-prompt-q { font-size: 13px; }
+  .ask-prompt-a { font-size: 11px; }
+  .feature-card { padding: 22px; }
+  .feature-title { font-size: 15px; }
+  .feature-body { font-size: 12px; }
+  .step-num { font-size: 44px; }
+  .step-title { font-size: 16px; }
+  .step-body { font-size: 13px; }
+  .themes-row { gap: 10px; }
+  .waitlist-section { padding: 64px 18px; }
+  .waitlist-piece { font-size: 48px; }
+  .waitlist-form { flex-direction: column; gap: 10px; }
+  .waitlist-form input { text-align: left; }
+  .waitlist-form button { width: 100%; }
+  .waitlist-sub { font-size: 14px; }
+  footer { padding: 24px 18px; }
 }
 </style>
 </head>
